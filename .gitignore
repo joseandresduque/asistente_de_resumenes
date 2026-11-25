@@ -1,0 +1,21 @@
+# Secretos y variables de entorno
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Carpetas pesadas o generadas automáticamente
+node_modules/
+venv/
+.venv/
+__pycache__/
+dist/
+build/
+
+# Archivos del sistema y del editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
