@@ -1,0 +1,8 @@
+# Dependencias directas del Asistente de Resúmenes
+# Versiones verificadas con Python 3.13.15
+
+gradio==6.32.0
+ollama==0.6.3
+requests==2.34.2
+PyYAML==6.0.4
+httpx==0.28.1
