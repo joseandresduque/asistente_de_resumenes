@@ -1,119 +1,109 @@
-# Asistente de Resúmenes
+# Asistente de resúmenes
 
-Aplicación web local, construida con [Gradio](https://www.gradio.app/), que resume textos usando modelos de lenguaje ejecutados en local con [Ollama](https://ollama.com/). No se envía ningún dato a servicios en la nube: todo el procesamiento ocurre en tu máquina.
+Aplicación en Python que resume un texto usando un modelo de lenguaje local con [Ollama](https://ollama.com). La interfaz web está hecha con [Gradio](https://www.gradio.app).
 
-## Características
-
-- Interfaz web sencilla con dos paneles: **Texto original** y **Texto resumido**.
-- Detección automática de los modelos instalados en Ollama (se muestran como opciones seleccionables).
-- Control de la **temperatura** del modelo (0.1 – 1.0) para ajustar creatividad/fidelidad del resumen.
-- Control de la **longitud de contexto** (`num_ctx`), configurable hasta el valor definido en `config.yml`.
-- Validación de la entrada: si el texto está vacío o tiene menos de 100 caracteres, se muestra un error.
-- Comprobación del resultado: si el modelo no consigue acortar el texto, se avisa en lugar de devolver una salida inválida.
-- Mensajes de error claros si Ollama no está arrancado, tarda demasiado o no devuelve modelos.
+Pegas un texto, eliges el tamaño aproximado del resumen (como porcentaje del original), la temperatura y el modelo, y la aplicación devuelve una versión resumida.
 
 ## Requisitos
 
-- **Python 3.13** (probado con 3.13.15).
-- **Ollama** instalado y en ejecución en `http://127.0.0.1:11434`.
+- Python 3.10 o superior.
+- Ollama instalado y **en ejecución** antes de arrancar la aplicación.
 - Al menos un modelo descargado en Ollama, por ejemplo:
 
-  ```bash
-  ollama pull llama3.2:1b
-  ```
+```bash
+ollama pull llama3.2:1b
+```
 
-### Dependencias de Python
-
-| Paquete    | Versión usada |
-| ---------- | ------------- |
-| `gradio`   | 6.32.0        |
-| `ollama`   | 0.6.3         |
-| `requests` | 2.34.2        |
-| `PyYAML`   | 6.0.4         |
-| `httpx`    | 0.28.1        |
+Puedes ver los modelos instalados con `ollama list`.
 
 ## Instalación
 
-Todas las dependencias están fijadas en `requirements.txt`.
-
-### Opción A: con `uv` (recomendada)
-
-```bash
-uv venv
-uv pip install -r requirements.txt
-```
-
-### Opción B: con `venv` y `pip`
+1. Descarga o clona el proyecto y entra en su carpeta.
+2. (Recomendado) Crea y activa un entorno virtual:
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate      # Windows
-# source .venv/bin/activate  # Linux / macOS
-pip install -r requirements.txt
+```
+
+   - Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`
+   - macOS / Linux: `source .venv/bin/activate`
+
+3. Instala las dependencias:
+
+```bash
+python -m pip install gradio ollama requests pyyaml
 ```
 
 ## Configuración
 
-El archivo `config.yml` contiene los valores por defecto de la interfaz:
+Los valores iniciales se leen del archivo `config.yml`:
 
 ```yaml
 temperatura: 0.3
 context_length: 3000
 ```
 
-- `temperatura`: valor inicial del deslizador de temperatura (0.1 – 1.0).
-- `context_length`: tamaño máximo de contexto (`num_ctx`) y límite superior del deslizador de longitud.
+| Clave | Para qué sirve |
+|---|---|
+| `temperatura` | Valor inicial del deslizador de temperatura. Más bajo, respuestas más predecibles; más alto, más variadas. |
+| `context_length` | Tamaño de contexto en tokens (`num_ctx` de Ollama): cuánto texto puede tener en cuenta el modelo, contando el texto original y el resumen. No se cambia desde la interfaz. Si falta, se usa 3000. |
 
-> El archivo debe estar en el mismo directorio desde el que se ejecuta la aplicación; de lo contrario se lanzará `FileNotFoundError`.
+Los cambios que hagas en la interfaz no se guardan en `config.yml`. Para cambiar los valores iniciales, edita el archivo y reinicia la aplicación.
 
 ## Uso
 
-1. Arranca Ollama (si no está corriendo ya):
+Desde la carpeta del proyecto, con Ollama encendido:
 
-   ```bash
-   ollama serve
-   ```
-
-2. Inicia la aplicación:
-
-   ```bash
-   python main.py
-   ```
-
-3. Abre en el navegador la dirección que muestra la consola (por defecto `http://127.0.0.1:7860`).
-
-4. Pega un texto de al menos 100 caracteres, elige el modelo, ajusta temperatura y longitud, y pulsa **Resumir**.
-
-## Estructura del proyecto
-
+```bash
+python main.py
 ```
-asistente_de_resumenes/
-├── main.py                     # Lógica de la app e interfaz Gradio
-├── config.yml                  # Parámetros por defecto (temperatura, contexto)
-├── requirements.txt            # Dependencias de Python
-├── Proyecto_IA_Generativa.pdf  # Documentación/capturas del proyecto
-└── README.md
-```
+
+Abre en el navegador la dirección que aparece en la terminal (normalmente `http://127.0.0.1:7860`).
+
+1. Pega el texto en **Texto original** (entre 300 y 4000 caracteres).
+2. Elige la **Longitud del resumen**, que indica el tamaño aproximado respecto al texto original:
+
+| Opción | Tamaño del resumen |
+|---|---|
+| Corto (20% - 30%) | Entre el 20 % y el 30 % de las palabras del original |
+| Medio (40% - 50%) | Entre el 40 % y el 50 % de las palabras del original |
+| Largo (60% - 75%) | Entre el 60 % y el 75 % de las palabras del original |
+
+3. Ajusta la **Temperatura** si quieres.
+4. Elige un modelo en **Modelos**.
+5. Pulsa **Resumir**. El resultado aparece en **Texto resumido**.
+6. Pulsa **Limpiar** para vaciar los campos.
 
 ## Cómo funciona
 
-1. Al arrancar, `cargar_config()` lee `config.yml` y `get_ollama_models()` consulta `GET /api/tags` de Ollama para obtener los modelos disponibles.
-2. La interfaz de Gradio se construye con esos valores: deslizadores de temperatura y longitud, y un selector de modelo.
-3. Al pulsar **Resumir**, `resumir_texto()` valida la entrada y envía una conversación al modelo mediante `ollama.Client`:
-   - **system**: instrucción para resumir el texto en menos caracteres que el original.
-   - **user**: el texto a resumir.
-4. Se aplican las opciones `temperature` y `num_ctx`, con un timeout de 300 segundos.
-5. Si el resumen devuelto es más corto que el original se muestra; en caso contrario se informa de que no se pudo resumir.
+1. Al arrancar, se carga `config.yml`.
+2. Se piden a Ollama los modelos instalados (`http://127.0.0.1:11434/api/tags`) y se muestran en la lista de modelos.
+3. Si no se pueden obtener, o no hay ninguno instalado, se muestra el motivo por la terminal y la aplicación se cierra sin abrir la interfaz.
+4. Al pulsar **Resumir**, la función `resumir_texto` valida la entrada y cuenta las palabras del texto. Con el porcentaje elegido calcula un rango de palabras (por ejemplo, entre 30 y 45) y se lo pide al modelo en un mensaje de sistema. Después devuelve la respuesta.
 
-## Limitaciones conocidas
+Se traduce el porcentaje a un número de palabras porque a un modelo pequeño le resulta más fácil cumplir "entre 30 y 45 palabras" que "el 30 % del texto".
 
-- La aplicación requiere que Ollama esté accesible en `127.0.0.1:11434`; no está pensada para servidores remotos.
-- Si no hay modelos instalados, la app no se lanza y se imprime el error en consola.
-- El texto se envía completo al modelo; para documentos muy largos conviene aumentar `context_length` o dividir el texto en fragmentos.
-- El criterio de éxito es únicamente que la salida sea más corta que la entrada, no una evaluación de calidad del resumen.
+## Validaciones y errores
 
-## Posibles mejoras
+- El texto debe tener entre 300 y 4000 caracteres (el máximo está en la constante `MAX_CARACTERES` de `main.py`).
+- Hay que seleccionar un modelo.
+- Si Ollama no responde, el modelo no existe o se supera el tiempo de espera (300 segundos), se muestra un mensaje de error en el cuadro de resultado.
+- Si el modelo devuelve una respuesta vacía, o un texto igual de largo o más largo que el original, se muestra "No ha podido resumir el texto".
 
-- Permitir elegir la URL de Ollama desde `config.yml`.
-- Trocear textos largos (chunking) y resumir por partes.
-- Exportar el resumen a archivo (`.txt` / `.md`).
+## Estructura del proyecto
+
+```text
+.
+├── main.py       # Lógica y interfaz de Gradio
+├── config.yml    # Valores iniciales (temperatura y contexto)
+└── README.md
+```
+
+## Limitaciones
+
+- Ollama tiene que estar encendido **antes** de arrancar. La lista de modelos se carga una sola vez, al iniciar: si instalas un modelo nuevo, reinicia la aplicación.
+- Hay que ejecutarla desde la carpeta del proyecto, porque `config.yml` se busca en la ruta actual.
+- El tamaño del resumen es aproximado: un modelo pequeño puede quedarse algo por debajo o por encima del rango pedido.
+- El máximo de 4000 caracteres es orientativo para un contexto de 3000 tokens, porque el texto y el resumen comparten ese contexto. Si aumentas `context_length` en `config.yml`, aumenta también `MAX_CARACTERES`.
+- La lista muestra todos los modelos instalados, incluidos los que no sirven para chatear (por ejemplo, los de embeddings).
+- Un modelo pequeño puede cometer errores o inventar datos, por lo que conviene revisar el resumen.
