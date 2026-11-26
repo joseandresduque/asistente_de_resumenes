@@ -44,7 +44,7 @@ python -m venv .venv
 3. Instala las dependencias:
 
 ```bash
-python -m pip install gradio ollama requests pyyaml
+python -m pip install -r requirements.txt
 ```
 
 ## Configuración
